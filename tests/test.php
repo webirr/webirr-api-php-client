@@ -1,6 +1,6 @@
 <?php
 
-use WeBirr;
+use WeBirr\WeBirrClient;
 
 $api = new WeBirrClient('x', true);
 
