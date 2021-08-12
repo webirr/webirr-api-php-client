@@ -11,7 +11,17 @@ class Bill {
     public $description;  //String
     public $billReference;  //String
     public $merchantID;  //String
-   
-}
 
-?>
+    function toArray() {
+        return
+            [
+                'amount' => $this->amount,
+                'customerCode' => $this->customerCode,
+                'customerName' => $this->customerName,
+                'time' => $this->time,
+                'description'=>$this->description,
+                'billReference' => $this->billReference,
+                'merchantID' => $this->merchantID   
+            ];
+    }
+}
