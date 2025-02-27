@@ -22,18 +22,21 @@ class ApiResponse
 class WeBirrClient
 {
 
-  private $apiKey;
+  private string $merchantId;
+  private string $apiKey;
   private $client;
 
   /**
    * Creates an instance of WeBirrClient object to interact with remote WebService API.
+   * @param {string} merchantId
    * @param {string} apiKey 
    * @param {boolean} isTestEnv 
    */
-  public function __construct($apiKey, $isTestEnv)
+  public function __construct(string $merchantId, string $apiKey, bool $isTestEnv)
   {
+    $this->merchantId = $merchantId;
     $this->apiKey = $apiKey;
-    $this->client = new Client(['base_uri' => $isTestEnv ? 'https://api.webirr.com/' : 'https://api.webirr.com:8080/']);
+    $this->client = new Client(['base_uri' => $isTestEnv ? 'https://api.webirr.net/' : 'https://api.webirr.net:8080/']);
   }
   /** 
    * Create a new bill at WeBirr Servers.
@@ -44,7 +47,7 @@ class WeBirrClient
    */
   public function createBill(Bill $bill)
   {
-    $response = $this->client->post('einvoice/api/postbill?api_key=' . $this->apiKey, ['json' => $bill->toArray()]);
+    $response = $this->client->post('einvoice/api/bill?api_key=' . $this->apiKey . '&merchant_id=' . $this->merchantId, ['json' => $bill->toArray()]);
 
     if ($response->getStatusCode() == 200)
       return json_decode($response->getBody());
@@ -61,7 +64,7 @@ class WeBirrClient
    */
   public function updateBill(Bill $bill)
   {
-    $response = $this->client->put('einvoice/api/postbill?api_key=' . $this->apiKey, ['json' => $bill->toArray()]);
+    $response = $this->client->put('einvoice/api/bill?api_key=' . $this->apiKey . '&merchant_id=' . $this->merchantId, ['json' => $bill->toArray()]);
 
     if ($response->getStatusCode() == 200)
       return json_decode($response->getBody());
@@ -76,10 +79,10 @@ class WeBirrClient
    * Check if(ApiResponse.error == null) to see if there are errors.
    * ApiResponse.res will have the value of "OK" on success.
    */
-  public function deleteBill($paymentCode)
+  public function deleteBill(string $paymentCode)
   {
-    $response = $this->client->put(
-      'einvoice/api/deletebill?api_key=' . $this->apiKey . '&wbc_code=' . $paymentCode,
+    $response = $this->client->delete(
+      'einvoice/api/bill?api_key=' . $this->apiKey . '&merchant_id=' . $this->merchantId . '&wbc_code=' . $paymentCode,
       ['json' => []]
     );
 
@@ -90,21 +93,63 @@ class WeBirrClient
   }
 
   /**
-   * Get Payment Status of a bill from WeBirr Servers
+   * Get Payment Status of a Bill from WeBirr Servers
    * @param {string} paymentCode is the number that WeBirr Payment Gateway returns on createBill.
    * @returns {object/stdClass/ApiResponse} see sample for structure of the returned ApiResponse Object  
    * Check if(ApiResponse.error == null) to see if there are errors.
    * ApiResponse.res will have `Payment` object on success (will be null otherwise!)
    * ApiResponse.res?.isPaid ?? false -> will return true if the bill is paid (payment completed)
-   * ApiResponse.res?.data ?? null -> will have `PaymentDetail` object
+   * ApiResponse.res?.status -> will return 0 if the bill is pending payment, 1 if payment is in progress (unconfirmed), 2 if paid
    */
-  public function getPaymentStatus($paymentCode)
+  public function getPaymentStatus(string $paymentCode)
   {
-    $response = $this->client->get('einvoice/api/getPaymentStatus?api_key=' . $this->apiKey . '&wbc_code=' . $paymentCode);
+    $response = $this->client->get('einvoice/api/paymentStatus?api_key=' . $this->apiKey . '&merchant_id=' . $this->merchantId . '&wbc_code=' . $paymentCode);
 
     if ($response->getStatusCode() == 200)
       return json_decode($response->getBody());
     else
       return ['error' => 'http error ' . $response->getStatusCode() . $response->getReasonPhrase()];
   }
+
+  /**
+   * Get list of Payments from WeBirr Servers received after the last processed timestamp ( for bulk polling )
+   * The caller should track the last retrieved payment timestamp to prevent duplicate retrievals.
+   * on firt time calls, lastTimeStamp can be empty string "" or current dateTime with any precesion formated as IntString "20250227" or "20250227135959".
+   * This API can be used to track paid (confirmed) as well as reversed payment transactions.
+   * Polling implementations should gracefully handle the rare case of redundant read to the same record.
+   * @param {string} lastTimeStamp The updateTimestamp field value of the last payment record in the array retrieved before.
+   * @param {int} limit The number of records returned per request based on the caller's processing capacity.
+   * @returns {object/stdClass/ApiResponse} See example for structure of the returned ApiResponse Object.
+   * Check if(ApiResponse.error == null) to see if there are errors.
+   * ApiResponse.res? will have an array of `Payment` objects or empty array [] on success ( will be null on error!).
+   * ApiResponse.res?[i].status -> will return 2 if payment is a confirmed payment(Paid) or 3 if payment is reversed/canceled.
+   */
+  public function getPayments(string $lastTimeStamp,int $limit)
+  {
+    $response = $this->client->get('einvoice/api/payments?api_key=' . $this->apiKey . '&merchant_id=' . $this->merchantId . '&last_timestamp=' . $lastTimeStamp . '&limit=' . $limit);
+
+    if ($response->getStatusCode() == 200)
+      return json_decode($response->getBody());
+    else
+      return ['error' => 'http error ' . $response->getStatusCode() . $response->getReasonPhrase()];
+  }
+
+  /**
+   * Retrieves basic statistics about bills created and payments received over a date range
+   * @param {string} dateFrom The start date of range (format: YYYY-MM-DD).
+   * @param {string} dateTo The end date of range (format: YYYY-MM-DD).
+   * @returns {object/stdClass/ApiResponse} The response object containing statistics or an error message.
+   * Check if(ApiResponse.error == null) to see if there are errors.
+   * ApiResponse.res will ha statistics objects on success (will be null otherwise!).
+   */
+  public function getStat(string $dateFrom, string $dateTo)
+  {
+    $response = $this->client->get('merchant/stat?api_key=' . $this->apiKey . '&merchant_id=' . $this->merchantId . '&date_from=' . $dateFrom . '&date_to=' . $dateTo);
+
+    if ($response->getStatusCode() == 200)
+      return json_decode($response->getBody());
+    else
+      return ['error' => 'http error ' . $response->getStatusCode() . $response->getReasonPhrase()];
+  }
+
 }

@@ -8,13 +8,13 @@ use WeBirr\WeBirrClient;
 // Create & Update Bill
 function main()
 {
-    $apiKey = 'YOUR_API_KEY';
-    $merchantId = 'YOUR_MERCHANT_ID';
+    $apiKey = getenv('wb_apikey_1') !== false ? getenv('wb_apikey_1') : "";
+    $merchantId = getenv('wb_merchid_1') !== false ? getenv('wb_merchid_1') : "";
 
-    //$apiKey = getenv('wb_apikey_1');
-    //$merchantId = getenv('wb_merchid_1');
+    //$apiKey = 'YOUR_API_KEY';
+    //$merchantId = 'YOUR_MERCHANT_ID';
 
-    $api = new WeBirrClient($apiKey, true);
+    $api = new WeBirrClient($merchantId, $apiKey, true);
 
     $bill = new Bill();
 
@@ -23,7 +23,7 @@ function main()
     $bill->customerName =  'Elias Haileselassie';
     $bill->time = '2021-07-22 22:14'; // your bill time, always in this format
     $bill->description = 'hotel booking';
-    $bill->billReference = 'php/2021/127'; // your unique reference number
+    $bill->billReference = 'php/2021/132'; // your unique reference number
     $bill->merchantID = $merchantId;
 
     echo "\nCreating Bill...";

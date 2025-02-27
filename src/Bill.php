@@ -4,13 +4,14 @@ namespace WeBirr;
 
 class Bill {
 
-    public $amount;  //String
-    public $customerCode; //String
-    public $customerName; //String
-    public $time;  //Date formatted as string. 
-    public $description;  //String
-    public $billReference;  //String
-    public $merchantID;  //String
+    public string $amount;  //Decimal formated as String
+    public string $customerCode; //String
+    public string $customerName; //String
+    public string $time;  //DateTime formatted as string  
+    public string $description;  //String
+    public string $billReference;  //String
+    public string $merchantID;  //String
+    public array $extras = [""=>""];  // Associative array(string,string) for extras
 
     function toArray() {
         return
@@ -21,7 +22,8 @@ class Bill {
                 'time' => $this->time,
                 'description'=>$this->description,
                 'billReference' => $this->billReference,
-                'merchantID' => $this->merchantID   
+                'merchantID' => $this->merchantID,
+                'extras' => $this->extras   
             ];
     }
 }
