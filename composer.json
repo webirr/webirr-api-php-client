@@ -1,7 +1,7 @@
 {
     "name": "webirr/webirr",
     "type": "library",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "description": "Official PHP Client Library for WeBirr Payment Gateway APIs",
     "keywords": ["ethiopia", "fintech"],
     "homepage": "https://github.com/webirr/webirr-api-php-client",
@@ -9,17 +9,17 @@
     "authors": [
         {
             "name": "WeBirr",
-            "email": "tech@webirr.com",
-            "homepage": "https://webirr.com"
+            "email": "tech@webirr.net",
+            "homepage": "https://webirr.net"
         }
     ],
     "require": {
-        "php": "^5.6||^7.0||^8.0",
-        "guzzlehttp/guzzle": "~5.3.3||~6.0||~7.3",
-        "guzzlehttp/psr7": "^1.8"
+        "php": ">=7.2.5",
+        "guzzlehttp/guzzle": ">=7.9.0",
+        "guzzlehttp/psr7": ">=2.7.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.5"
+        "phpunit/phpunit": ">=9.5"
     },
     "autoload": {
         "psr-4": {
