@@ -39,7 +39,7 @@ class Webhook
         }
 
         // Decode the JSON payload into an associative array
-        $data = json_decode($rawPayload, true);
+        $jsonBody = json_decode($rawPayload, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             http_response_code(400);
             header('Content-Type: application/json');
@@ -48,7 +48,7 @@ class Webhook
         }
 
         try {
-            $payment = new Payment($data);
+            $payment = new Payment($jsonBody['data']);
         } catch (Exception $e) {
             http_response_code(400);
             header('Content-Type: application/json');
