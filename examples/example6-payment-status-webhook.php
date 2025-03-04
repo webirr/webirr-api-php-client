@@ -4,6 +4,9 @@ require 'vendor/autoload.php';
 
 use WeBirr\Payment;
 
+// Webhook handler for processing payment updates from WeBirr.
+// This script should be hosted on a secure server with HTTPS enabled.
+
 class Webhook
 {
     /**
