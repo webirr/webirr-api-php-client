@@ -25,13 +25,13 @@ class PaymentProcessor
     {
         while (true) {
             echo "\nRetrieving Payments...";
-            $this->FetchPayments();
+            $this->fetchAndProcessPayments();
             echo "\nSleeping for 5 seconds...";
             sleep(5); // Sleep for 5 seconds before the next polling
         }
     }
 
-    private function FetchPayments()
+    private function fetchAndProcessPayments()
     {
         $limit = 100;  // Number of records to retrieve depending on your processing requirement & capacity
         $response = $this->api->getPayments($this->lastTimeStamp, $limit);
@@ -43,7 +43,7 @@ class PaymentProcessor
             }
             foreach ($response->res as $obj) {
                 $payment = new Payment($obj);
-                $this->ProcessPayment($payment);
+                $this->processPayment($payment);
                 echo "\n-----------------------------";
             }
 
@@ -59,8 +59,11 @@ class PaymentProcessor
         }
     }
 
-    // Process Payment should be impleneted as idempotent operation for production use cases
-    private function ProcessPayment(Payment $payment)
+    /**
+      * Process Payment should be impleneted as idempotent operation for production use cases
+      * This method and logic can be shared among all payment processing consumers: 1. bulk polling, 2. webhook, 3. single payment polling.
+     */
+    private function processPayment(Payment $payment)
     {
         echo "\nPayment Status: " . $payment->status;
         if ($payment->IsPaid()) {

@@ -1,7 +1,7 @@
 {
     "name": "webirr/webirr",
     "type": "library",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "Official PHP Client Library for WeBirr Payment Gateway APIs",
     "keywords": ["ethiopia", "fintech"],
     "homepage": "https://github.com/webirr/webirr-api-php-client",
