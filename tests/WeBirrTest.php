@@ -15,7 +15,7 @@ class WeBirrTest extends TestCase
     function test_CreateBill_should_get_error_from_WebService_on_invalid_api_key_TestEnv()
     {
         $bill = $this->sampleBill();
-        $api = new WeBirrClient('x', true);
+        $api = new WeBirrClient('x','x',true);
         $res = $api->createBill($bill);
         
         $this->assertTrue(strlen($res->errorCode) > 0);
@@ -24,7 +24,7 @@ class WeBirrTest extends TestCase
     function test_CreateBill_should_get_error_from_WebService_on_invalid_api_key_ProdEnv()
     {
         $bill = $this->sampleBill();
-        $api = new WeBirrClient('x', false);
+        $api = new WeBirrClient('x', 'x', false);
         $res = $api->createBill($bill);
         
         $this->assertTrue(strlen($res->errorCode) > 0);
@@ -33,7 +33,7 @@ class WeBirrTest extends TestCase
     function test_UpdateBill_should_get_error_from_WebService_on_invalid_api_key()
     {
         $bill = $this->sampleBill();
-        $api = new WeBirrClient('x', true);
+        $api = new WeBirrClient('x', 'x', true);
         $res = $api->updateBill($bill);
         
         $this->assertTrue(strlen($res->errorCode) > 0);
@@ -41,7 +41,7 @@ class WeBirrTest extends TestCase
     
     function test_DeleteBill_should_get_error_from_WebService_on_invalid_api_key()
     {
-        $api = new WeBirrClient('x', true);
+        $api = new WeBirrClient('x', 'x', true);
         $res = $api->deleteBill('xxxx');
         
         $this->assertTrue(strlen($res->error) > 0); // should contain error, erroCode is not implemented for deleteBill 
@@ -49,7 +49,7 @@ class WeBirrTest extends TestCase
 
     function test_GetPaymentStatus_should_get_error_from_WebService_on_invalid_api_key()
     {
-        $api = new WeBirrClient('x', true);
+        $api = new WeBirrClient('x', 'x', true);
         $res = $api->getPaymentStatus('xxxx');
         
         $this->assertTrue(strlen($res->errorCode) > 0); // should contain error 
