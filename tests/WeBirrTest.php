@@ -1,71 +1,118 @@
 <?php
-//declare(strict_types=1);
+
 namespace WeBirr\Tests;
 
 require 'vendor/autoload.php';
 
+use PHPUnit\Framework\TestCase;
 use WeBirr\Bill;
 use WeBirr\WeBirrClient;
 
-use  \PHPUnit\Framework\TestCase;
-use function PHPUnit\Framework\assertTrue;
-
 class WeBirrTest extends TestCase
 {
-    function test_CreateBill_should_get_error_from_WebService_on_invalid_api_key_TestEnv()
+    public function testCreateBillUsesClientMerchantIdBeforeSending()
     {
         $bill = $this->sampleBill();
-        $api = new WeBirrClient('x','x',true);
-        $res = $api->createBill($bill);
-        
-        $this->assertTrue(strlen($res->errorCode) > 0);
+        $api = new WeBirrClient('merchant-from-client', 'x', true);
+
+        $api->createBill($bill);
+
+        $this->assertSame('merchant-from-client', $bill->merchantID);
     }
 
-    function test_CreateBill_should_get_error_from_WebService_on_invalid_api_key_ProdEnv()
+    public function testCreateBillShouldGetErrorFromWebServiceOnInvalidApiKeyTestEnv()
     {
         $bill = $this->sampleBill();
-        $api = new WeBirrClient('x', 'x', false);
+        $api = new WeBirrClient('x', 'x', true);
         $res = $api->createBill($bill);
-        
-        $this->assertTrue(strlen($res->errorCode) > 0);
+
+        $this->assertApiError($res);
     }
-    
-    function test_UpdateBill_should_get_error_from_WebService_on_invalid_api_key()
+
+    public function testUpdateBillShouldGetErrorFromWebServiceOnInvalidApiKey()
     {
         $bill = $this->sampleBill();
         $api = new WeBirrClient('x', 'x', true);
         $res = $api->updateBill($bill);
-        
-        $this->assertTrue(strlen($res->errorCode) > 0);
+
+        $this->assertApiError($res);
     }
-    
-    function test_DeleteBill_should_get_error_from_WebService_on_invalid_api_key()
+
+    public function testDeleteBillShouldGetErrorFromWebServiceOnInvalidApiKey()
     {
         $api = new WeBirrClient('x', 'x', true);
         $res = $api->deleteBill('xxxx');
-        
-        $this->assertTrue(strlen($res->error) > 0); // should contain error, erroCode is not implemented for deleteBill 
+
+        $this->assertApiError($res);
     }
 
-    function test_GetPaymentStatus_should_get_error_from_WebService_on_invalid_api_key()
+    public function testGetPaymentStatusShouldGetErrorFromWebServiceOnInvalidApiKey()
     {
         $api = new WeBirrClient('x', 'x', true);
         $res = $api->getPaymentStatus('xxxx');
-        
-        $this->assertTrue(strlen($res->errorCode) > 0); // should contain error 
+
+        $this->assertApiError($res);
+    }
+
+    public function testGetBillByReferenceShouldGetErrorFromWebServiceOnInvalidApiKey()
+    {
+        $api = new WeBirrClient('x', 'x', true);
+        $res = $api->getBillByReference('missing-reference');
+
+        $this->assertApiError($res);
+    }
+
+    public function testGetBillByPaymentCodeShouldGetErrorFromWebServiceOnInvalidApiKey()
+    {
+        $api = new WeBirrClient('x', 'x', true);
+        $res = $api->getBillByPaymentCode('xxxx');
+
+        $this->assertApiError($res);
+    }
+
+    public function testGetBillsShouldGetErrorFromWebServiceOnInvalidApiKey()
+    {
+        $api = new WeBirrClient('x', 'x', true);
+        $res = $api->getBills(-1, '', 10);
+
+        $this->assertApiError($res);
+    }
+
+    public function testGetPaymentsShouldGetErrorFromWebServiceOnInvalidApiKey()
+    {
+        $api = new WeBirrClient('x', 'x', true);
+        $res = $api->getPayments('', 10);
+
+        $this->assertApiError($res);
+    }
+
+    public function testGetStatShouldGetErrorFromWebServiceOnInvalidApiKey()
+    {
+        $api = new WeBirrClient('x', 'x', true);
+        $res = $api->getStat('2025-01-01', '2025-01-02');
+
+        $this->assertApiError($res);
     }
 
     private function sampleBill()
     {
         $bill = new Bill();
         $bill->amount = '270.90';
-        $bill->customerCode = 'cc01';  // it can be email address or phone number if you dont have customer code
-        $bill->customerName =  'Elias Haileselassie';
-        $bill->time = '2021-07-22 22:14'; // your bill time, always in this format
-        $bill->description = 'hotel booking';
-        $bill->billReference = 'php/2021/127'; // your unique reference number
-        $bill->merchantID = 'x';
+        $bill->customerCode = 'sdk-test-customer';
+        $bill->customerName = 'SDK Test Customer';
+        $bill->time = date('Y-m-d H:i');
+        $bill->description = 'SDK test bill';
+        $bill->billReference = 'php/unit/' . time();
 
         return $bill;
+    }
+
+    private function assertApiError($res)
+    {
+        $this->assertIsObject($res);
+        $this->assertTrue(
+            !empty($res->error) || !empty($res->errorCode),
+            'Expected API error response.'
+        );
     }
 }

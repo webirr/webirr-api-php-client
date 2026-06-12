@@ -10,7 +10,7 @@ class Bill {
     public string $time;  //DateTime formatted as string  
     public string $description;  //String
     public string $billReference;  //String
-    public string $merchantID;  //String
+    public string $merchantID = "";  //String - set automatically by WeBirrClient before sending
     public array $extras = [""=>""];  // Associative array(string,string) for extras
 
     function toArray() {
