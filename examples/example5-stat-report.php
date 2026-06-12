@@ -8,8 +8,8 @@ use WeBirr\Stat;
 // Get basic statistics about bills created and payments received for a date range 
 function main()
 {
-    $apiKey = getenv('wb_apikey_1') !== false ? getenv('wb_apikey_1') : "";
-    $merchantId = getenv('wb_merchid_1') !== false ? getenv('wb_merchid_1') : "";
+    $apiKey = getenv('WEBIRR_TEST_ENV_API_KEY') !== false ? getenv('WEBIRR_TEST_ENV_API_KEY') : "";
+    $merchantId = getenv('WEBIRR_TEST_ENV_MERCHANT_ID') !== false ? getenv('WEBIRR_TEST_ENV_MERCHANT_ID') : "";
 
     //$apiKey = 'YOUR_API_KEY';
     //$merchantId = 'YOUR_MERCHANT_ID'; 

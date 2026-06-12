@@ -38,6 +38,37 @@ class WeBirrClient
     $this->apiKey = $apiKey;
     $this->client = new Client(['base_uri' => $isTestEnv ? 'https://api.webirr.net/' : 'https://api.webirr.net:8080/']);
   }
+
+  private function query(array $params = []): string
+  {
+    return http_build_query(
+      array_merge(
+        [
+          'api_key' => $this->apiKey,
+          'merchant_id' => $this->merchantId
+        ],
+        $params
+      ),
+      '',
+      '&',
+      PHP_QUERY_RFC3986
+    );
+  }
+
+  private function prepareBill(Bill $bill): Bill
+  {
+    $bill->merchantID = $this->merchantId;
+    return $bill;
+  }
+
+  private function decodeResponse($response)
+  {
+    if ($response->getStatusCode() == 200)
+      return json_decode($response->getBody());
+    else
+      return ['error' => 'http error ' . $response->getStatusCode() . $response->getReasonPhrase()];
+  }
+
   /** 
    * Create a new bill at WeBirr Servers.
    * @param {Bill} bill represents an invoice or bill for a customer. see sample for structure of the Bill
@@ -47,12 +78,10 @@ class WeBirrClient
    */
   public function createBill(Bill $bill)
   {
-    $response = $this->client->post('einvoice/api/bill?api_key=' . $this->apiKey . '&merchant_id=' . $this->merchantId, ['json' => $bill->toArray()]);
+    $bill = $this->prepareBill($bill);
+    $response = $this->client->post('einvoice/api/bill?' . $this->query(), ['json' => $bill->toArray()]);
 
-    if ($response->getStatusCode() == 200)
-      return json_decode($response->getBody());
-    else
-      return ['error' => 'http error ' . $response->getStatusCode() . $response->getReasonPhrase()];
+    return $this->decodeResponse($response);
   }
   /**  
    * Update an existing bill at WeBirr Servers, if the bill is not paid yet.
@@ -64,12 +93,10 @@ class WeBirrClient
    */
   public function updateBill(Bill $bill)
   {
-    $response = $this->client->put('einvoice/api/bill?api_key=' . $this->apiKey . '&merchant_id=' . $this->merchantId, ['json' => $bill->toArray()]);
+    $bill = $this->prepareBill($bill);
+    $response = $this->client->put('einvoice/api/bill?' . $this->query(), ['json' => $bill->toArray()]);
 
-    if ($response->getStatusCode() == 200)
-      return json_decode($response->getBody());
-    else
-      return ['error' => 'http error ' . $response->getStatusCode() . $response->getReasonPhrase()];
+    return $this->decodeResponse($response);
   }
 
   /** 
@@ -82,14 +109,11 @@ class WeBirrClient
   public function deleteBill(string $paymentCode)
   {
     $response = $this->client->delete(
-      'einvoice/api/bill?api_key=' . $this->apiKey . '&merchant_id=' . $this->merchantId . '&wbc_code=' . $paymentCode,
+      'einvoice/api/bill?' . $this->query(['wbc_code' => $paymentCode]),
       ['json' => []]
     );
 
-    if ($response->getStatusCode() == 200)
-      return json_decode($response->getBody());
-    else
-      return ['error' => 'http error ' . $response->getStatusCode() . $response->getReasonPhrase()];
+    return $this->decodeResponse($response);
   }
 
   /**
@@ -103,12 +127,33 @@ class WeBirrClient
    */
   public function getPaymentStatus(string $paymentCode)
   {
-    $response = $this->client->get('einvoice/api/paymentStatus?api_key=' . $this->apiKey . '&merchant_id=' . $this->merchantId . '&wbc_code=' . $paymentCode);
+    $response = $this->client->get('einvoice/api/paymentStatus?' . $this->query(['wbc_code' => $paymentCode]));
 
-    if ($response->getStatusCode() == 200)
-      return json_decode($response->getBody());
-    else
-      return ['error' => 'http error ' . $response->getStatusCode() . $response->getReasonPhrase()];
+    return $this->decodeResponse($response);
+  }
+
+  /**
+   * Get one bill by the merchant bill reference.
+   * @param {string} billReference The merchant's unique bill reference.
+   * @returns {object/stdClass/ApiResponse} ApiResponse.res will contain the bill details on success.
+   */
+  public function getBillByReference(string $billReference)
+  {
+    $response = $this->client->get('einvoice/api/bill?' . $this->query(['bill_reference' => $billReference]));
+
+    return $this->decodeResponse($response);
+  }
+
+  /**
+   * Get one bill by WeBirr payment code / WBC code.
+   * @param {string} paymentCode The payment code returned by createBill.
+   * @returns {object/stdClass/ApiResponse} ApiResponse.res will contain the bill details on success.
+   */
+  public function getBillByPaymentCode(string $paymentCode)
+  {
+    $response = $this->client->get('einvoice/api/bill?' . $this->query(['wbc_code' => $paymentCode]));
+
+    return $this->decodeResponse($response);
   }
 
   /**
@@ -126,12 +171,27 @@ class WeBirrClient
    */
   public function getPayments(string $lastTimeStamp,int $limit)
   {
-    $response = $this->client->get('einvoice/api/payments?api_key=' . $this->apiKey . '&merchant_id=' . $this->merchantId . '&last_timestamp=' . $lastTimeStamp . '&limit=' . $limit);
+    $response = $this->client->get('einvoice/api/payments?' . $this->query(['last_timestamp' => $lastTimeStamp, 'limit' => $limit]));
 
-    if ($response->getStatusCode() == 200)
-      return json_decode($response->getBody());
-    else
-      return ['error' => 'http error ' . $response->getStatusCode() . $response->getReasonPhrase()];
+    return $this->decodeResponse($response);
+  }
+
+  /**
+   * Get list of bills updated after the last processed timestamp.
+   * @param {int} paymentStatus -1 for all, 0 pending, 1 unconfirmed payment, 2 paid.
+   * @param {string} lastTimeStamp Timestamp cursor. Empty string means from the beginning.
+   * @param {int} limit The number of bills returned per request.
+   * @returns {object/stdClass/ApiResponse} ApiResponse.res? will contain an array of bills on success.
+   */
+  public function getBills(int $paymentStatus = -1, string $lastTimeStamp = "", int $limit = 100)
+  {
+    $response = $this->client->get('einvoice/api/bills?' . $this->query([
+      'payment_status' => $paymentStatus,
+      'last_timestamp' => $lastTimeStamp,
+      'limit' => $limit
+    ]));
+
+    return $this->decodeResponse($response);
   }
 
   /**
@@ -144,12 +204,9 @@ class WeBirrClient
    */
   public function getStat(string $dateFrom, string $dateTo)
   {
-    $response = $this->client->get('merchant/stat?api_key=' . $this->apiKey . '&merchant_id=' . $this->merchantId . '&date_from=' . $dateFrom . '&date_to=' . $dateTo);
+    $response = $this->client->get('merchant/stat?' . $this->query(['date_from' => $dateFrom, 'date_to' => $dateTo]));
 
-    if ($response->getStatusCode() == 200)
-      return json_decode($response->getBody());
-    else
-      return ['error' => 'http error ' . $response->getStatusCode() . $response->getReasonPhrase()];
+    return $this->decodeResponse($response);
   }
 
 }

@@ -14,6 +14,15 @@ The library needs to be configured with a *merchant Id* & *API key*. You can get
 
 > You can use this library for production or test environments. you will need to set isTestEnv=true for test, and false for production apps when creating objects of class WeBirrClient
 
+Examples assume the WeBirr TestEnv and read credentials from environment variables:
+
+```bash
+export WEBIRR_TEST_ENV_MERCHANT_ID="YOUR_TEST_MERCHANT_ID"
+export WEBIRR_TEST_ENV_API_KEY="YOUR_TEST_API_KEY"
+```
+
+Create the client with merchant ID, API key, and environment once. The client automatically sets `Bill::$merchantID` before sending bill create/update requests, so application code and examples should not set `merchantID` on the bill object.
+
 ## Example
 
 ### Creating a new Bill / Updating an existing Bill on WeBirr Servers
@@ -29,8 +38,8 @@ use WeBirr\WeBirrClient;
 // Create & Update Bill
 function main()
 {
-    $apiKey = getenv('wb_apikey_1') !== false ? getenv('wb_apikey_1') : "";
-    $merchantId = getenv('wb_merchid_1') !== false ? getenv('wb_merchid_1') : "";
+    $apiKey = getenv('WEBIRR_TEST_ENV_API_KEY') !== false ? getenv('WEBIRR_TEST_ENV_API_KEY') : "";
+    $merchantId = getenv('WEBIRR_TEST_ENV_MERCHANT_ID') !== false ? getenv('WEBIRR_TEST_ENV_MERCHANT_ID') : "";
 
     //$apiKey = 'YOUR_API_KEY';
     //$merchantId = 'YOUR_MERCHANT_ID';
@@ -44,8 +53,7 @@ function main()
     $bill->customerName =  'Elias Haileselassie';
     $bill->time = '2021-07-22 22:14'; // your bill time, always in this format
     $bill->description = 'hotel booking';
-    $bill->billReference = 'php/2021/128'; // your unique reference number
-    $bill->merchantID = $merchantId;
+    $bill->billReference = 'php/example/' . date('YmdHis'); // your unique reference number
 
     echo "\nCreating Bill...";
 
@@ -87,6 +95,51 @@ main();
 
 ```
 
+### Getting a Bill and Listing Bills
+
+```php
+<?php
+
+require 'vendor/autoload.php';
+
+use WeBirr\WeBirrClient;
+
+function main()
+{
+    $apiKey = getenv('WEBIRR_TEST_ENV_API_KEY') !== false ? getenv('WEBIRR_TEST_ENV_API_KEY') : "";
+    $merchantId = getenv('WEBIRR_TEST_ENV_MERCHANT_ID') !== false ? getenv('WEBIRR_TEST_ENV_MERCHANT_ID') : "";
+
+    $api = new WeBirrClient($merchantId, $apiKey, true);
+
+    $billReference = "YOUR_BILL_REFERENCE";
+    $paymentCode = "YOUR_PAYMENT_CODE";
+
+    $res = $api->getBillByReference($billReference);
+    if (!$res->error) {
+        echo "\nBill found by reference";
+        print_r($res->res);
+    }
+
+    $res = $api->getBillByPaymentCode($paymentCode);
+    if (!$res->error) {
+        echo "\nBill found by payment code";
+        print_r($res->res);
+    }
+
+    $paymentStatus = -1; // -1 all, 0 pending, 1 unconfirmed payment, 2 paid.
+    $lastTimeStamp = ""; // Empty string starts from the beginning.
+    $limit = 10;
+
+    $res = $api->getBills($paymentStatus, $lastTimeStamp, $limit);
+    if (!$res->error) {
+        echo "\nBills returned: " . count($res->res);
+    }
+}
+
+main();
+
+```
+
 ### Getting Payment status of an existing Bill from WeBirr Servers
 
 ```php
@@ -95,14 +148,14 @@ main();
 require 'vendor/autoload.php';
 
 use WeBirr\WeBirrClient;
-use WeBirr\PaymentDetail;
+use WeBirr\Payment;
 
 // Get Payment Status of a Bill
 function main()
 {
 
-    $apiKey = getenv('wb_apikey_1') !== false ? getenv('wb_apikey_1') : "";
-    $merchantId = getenv('wb_merchid_1') !== false ? getenv('wb_merchid_1') : "";
+    $apiKey = getenv('WEBIRR_TEST_ENV_API_KEY') !== false ? getenv('WEBIRR_TEST_ENV_API_KEY') : "";
+    $merchantId = getenv('WEBIRR_TEST_ENV_MERCHANT_ID') !== false ? getenv('WEBIRR_TEST_ENV_MERCHANT_ID') : "";
 
     //$apiKey = 'YOUR_API_KEY';
     //$merchantId = 'YOUR_MERCHANT_ID';
@@ -118,7 +171,7 @@ function main()
     if (!$res->error) {
         // success
         if ($res->res->status == 2) {  // 0. Pending  ( $res->res->data will be null !), 1. Payment in Progress (unconfirmed payment) 2. Paid
-          $payment = new PaymentDetail($res->res->data);
+          $payment = new Payment($res->res->data);
           echo "\nbill is paid";
           echo "\nbill payment detail";
           echo "\nBank: $payment->bankID";
@@ -177,8 +230,8 @@ use WeBirr\WeBirrClient;
 function main()
 {
 
-    $apiKey = getenv('wb_apikey_1') !== false ? getenv('wb_apikey_1') : "";
-    $merchantId = getenv('wb_merchid_1') !== false ? getenv('wb_merchid_1') : "";
+    $apiKey = getenv('WEBIRR_TEST_ENV_API_KEY') !== false ? getenv('WEBIRR_TEST_ENV_API_KEY') : "";
+    $merchantId = getenv('WEBIRR_TEST_ENV_MERCHANT_ID') !== false ? getenv('WEBIRR_TEST_ENV_MERCHANT_ID') : "";
 
     //$apiKey = 'YOUR_API_KEY';
     //$merchantId = 'YOUR_MERCHANT_ID';
@@ -227,8 +280,8 @@ class PaymentProcessor
 
     public function __construct()
     {
-        $this->apiKey = getenv('wb_apikey_1') !== false ? getenv('wb_apikey_1') : "";
-        $this->merchantId = getenv('wb_merchid_1') !== false ? getenv('wb_merchid_1') : "";
+        $this->apiKey = getenv('WEBIRR_TEST_ENV_API_KEY') !== false ? getenv('WEBIRR_TEST_ENV_API_KEY') : "";
+        $this->merchantId = getenv('WEBIRR_TEST_ENV_MERCHANT_ID') !== false ? getenv('WEBIRR_TEST_ENV_MERCHANT_ID') : "";
         $this->api = new WeBirrClient($this->merchantId, $this->apiKey, true);
         $this->lastTimeStamp = '20250224120000'; // Example timestamp, replace with your actual last timestamp retrieved from your database to current date stamp for first time call
     }
@@ -439,8 +492,8 @@ use WeBirr\Stat;
 // Get basic statistics about bills created and payments received for a date range 
 function main()
 {
-    $apiKey = getenv('wb_apikey_1') !== false ? getenv('wb_apikey_1') : "";
-    $merchantId = getenv('wb_merchid_1') !== false ? getenv('wb_merchid_1') : "";
+    $apiKey = getenv('WEBIRR_TEST_ENV_API_KEY') !== false ? getenv('WEBIRR_TEST_ENV_API_KEY') : "";
+    $merchantId = getenv('WEBIRR_TEST_ENV_MERCHANT_ID') !== false ? getenv('WEBIRR_TEST_ENV_MERCHANT_ID') : "";
 
     //$apiKey = 'YOUR_API_KEY';
     //$merchantId = 'YOUR_MERCHANT_ID'; 

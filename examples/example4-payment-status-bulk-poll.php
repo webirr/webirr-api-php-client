@@ -15,8 +15,8 @@ class PaymentProcessor
 
     public function __construct()
     {
-        $this->apiKey = getenv('wb_apikey_1') !== false ? getenv('wb_apikey_1') : "";
-        $this->merchantId = getenv('wb_merchid_1') !== false ? getenv('wb_merchid_1') : "";
+        $this->apiKey = getenv('WEBIRR_TEST_ENV_API_KEY') !== false ? getenv('WEBIRR_TEST_ENV_API_KEY') : "";
+        $this->merchantId = getenv('WEBIRR_TEST_ENV_MERCHANT_ID') !== false ? getenv('WEBIRR_TEST_ENV_MERCHANT_ID') : "";
         $this->api = new WeBirrClient($this->merchantId, $this->apiKey, true);
         $this->lastTimeStamp = '20250224120000'; // Example timestamp, replace with your actual last timestamp retrieved from your database to current date stamp for first time call
     }
