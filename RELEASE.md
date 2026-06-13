@@ -3,11 +3,11 @@
 This repo publishes the Composer package `webirr/webirr` through Packagist.
 Stable Composer releases are driven by Git tags.
 
-## Release 2.1.0
+## Release 2.1.1
 
-Current published Packagist version before this release: `2.0.3`.
+Current published Packagist version before this release: `2.1.0`.
 
-Planned release version: `2.1.0`.
+Planned release version: `2.1.1`.
 
 Package page: `https://packagist.org/packages/webirr/webirr`
 
@@ -37,10 +37,10 @@ Use the existing local git identity. Do not override `git config user.name` or
 ```bash
 git status --short
 git add README.md RELEASE.md RELEASE_NOTES.md TASKS.md composer.json composer.lock src tests examples
-git commit -m "Enhance PHP SDK bill APIs and TestEnv coverage"
-git tag v2.1.0
+git commit -m "Polish PHP SDK bill and payment models"
+git tag v2.1.1
 git push origin main
-git push origin v2.1.0
+git push origin v2.1.1
 ```
 
 Do not move or reuse an existing published tag. If a released tag needs a fix,
@@ -48,26 +48,26 @@ make a new patch release tag.
 
 ## GitHub Release
 
-Create a GitHub Release from the pushed `v2.1.0` tag. This is the public release
+Create a GitHub Release from the pushed `v2.1.1` tag. This is the public release
 page and release-note record; the Git tag remains the Composer/Packagist release
 signal.
 
 Using GitHub CLI:
 
 ```bash
-gh release create v2.1.0 \
+gh release create v2.1.1 \
   --repo webirr/webirr-api-php-client \
-  --title "webirr/webirr 2.1.0" \
-  --notes-file RELEASE_NOTES.md \
+  --title "2.1.1" \
+  --notes "small model polish" \
   --verify-tag
 ```
 
 Or use GitHub web UI:
 
 1. Open `https://github.com/webirr/webirr-api-php-client/releases/new`.
-2. Choose the existing `v2.1.0` tag.
-3. Use title `webirr/webirr 2.1.0`.
-4. Paste or generate release notes from `RELEASE_NOTES.md`.
+2. Choose the existing `v2.1.1` tag.
+3. Use title `2.1.1`.
+4. Use brief notes such as `small model polish`.
 5. Publish the release.
 
 ## Packagist Verification
@@ -79,8 +79,8 @@ period after pushing, then check the package metadata:
 composer show webirr/webirr --all
 ```
 
-Expected result: `versions` includes `2.1.0`, and the latest stable source/dist
-points to the `v2.1.0` commit.
+Expected result: `versions` includes `2.1.1`, and the latest stable source/dist
+points to the `v2.1.1` commit.
 
 If Packagist does not refresh automatically, sign in with the approved WeBirr
 Packagist maintainer account and trigger a manual update. Do not store or copy
@@ -97,5 +97,5 @@ composer show webirr/webirr
 php -r 'require "vendor/autoload.php"; $client = new WeBirr\WeBirrClient("merchant", "api-key", true); echo get_class($client), PHP_EOL;'
 ```
 
-Expected result: Composer installs `webirr/webirr` version `2.1.0`, and the PHP
+Expected result: Composer installs `webirr/webirr` version `2.1.1`, and the PHP
 smoke command prints `WeBirr\WeBirrClient`.

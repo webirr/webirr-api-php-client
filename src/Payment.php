@@ -13,7 +13,7 @@ class Payment
     public string $bankID; // String
     public string $paymentReference; // String
     public string $paymentDate; // Date formatted as string 
-    public string $time; // save value as $paymentDate for backward compatibility
+    public string $time; // Deprecated alias for paymentDate; kept for backward compatibility
     public bool $confirmed;  // Boolean
     public string $confirmedTime; // Date formatted as string
     public bool $canceled; // Boolean - indicates if the payment was reversed.
@@ -41,6 +41,12 @@ class Payment
                     if (property_exists($this, $key)) {
                         $this->$key = $value;
                     }
+                }
+                if (!isset($this->time) && isset($this->paymentDate)) {
+                    $this->time = $this->paymentDate;
+                }
+                if (!isset($this->paymentDate) && isset($this->time)) {
+                    $this->paymentDate = $this->time;
                 }
             }
         }

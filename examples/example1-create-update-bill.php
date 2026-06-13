@@ -21,6 +21,7 @@ function main()
     $bill->amount = '270.90';
     $bill->customerCode = 'cc01';  // it can be email address or phone number if you dont have customer code
     $bill->customerName =  'Elias Haileselassie';
+    $bill->customerPhone = '0911000000'; // optional; used for SMS notification when enabled for the merchant
     $bill->time = '2021-07-22 22:14'; // your bill time, always in this format
     $bill->description = 'hotel booking';
     $bill->billReference = 'php/example/' . date('YmdHis'); // your unique reference number

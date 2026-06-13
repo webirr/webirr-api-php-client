@@ -158,11 +158,11 @@ class WeBirrClient
 
   /**
    * Get list of Payments from WeBirr Servers received after the last processed timestamp ( for bulk polling )
-   * The caller should track the last retrieved payment timestamp to prevent duplicate retrievals.
+   * The caller should track the last retrieved payment updateTimeStamp to prevent duplicate retrievals.
    * on firt time calls, lastTimeStamp can be empty string "" or current dateTime with any precesion formated as IntString "20250227" or "20250227135959".
    * This API can be used to track paid (confirmed) as well as reversed payment transactions.
    * Polling implementations should gracefully handle the rare case of redundant read to the same record.
-   * @param {string} lastTimeStamp The updateTimestamp field value of the last payment record in the array retrieved before.
+   * @param {string} lastTimeStamp The updateTimeStamp field value of the last payment record in the array retrieved before.
    * @param {int} limit The number of records returned per request based on the caller's processing capacity.
    * @returns {object/stdClass/ApiResponse} See example for structure of the returned ApiResponse Object.
    * Check if(ApiResponse.error == null) to see if there are errors.

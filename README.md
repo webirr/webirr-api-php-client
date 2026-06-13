@@ -51,6 +51,7 @@ function main()
     $bill->amount = '270.90';
     $bill->customerCode = 'cc01';  // it can be email address or phone number if you dont have customer code
     $bill->customerName =  'Elias Haileselassie';
+    $bill->customerPhone = '0911000000'; // optional; used for SMS notification when enabled for the merchant
     $bill->time = '2021-07-22 22:14'; // your bill time, always in this format
     $bill->description = 'hotel booking';
     $bill->billReference = 'php/example/' . date('YmdHis'); // your unique reference number
@@ -177,6 +178,7 @@ function main()
           echo "\nBank: $payment->bankID";
           echo "\nBank Reference Number: $payment->paymentReference";
           echo "\nAmount Paid: $payment->amount";
+          echo "\nPayment Date: $payment->paymentDate";
         } else
           echo "\nbill is pending payment";
       } else {
@@ -283,7 +285,7 @@ class PaymentProcessor
         $this->apiKey = getenv('WEBIRR_TEST_ENV_API_KEY') !== false ? getenv('WEBIRR_TEST_ENV_API_KEY') : "";
         $this->merchantId = getenv('WEBIRR_TEST_ENV_MERCHANT_ID') !== false ? getenv('WEBIRR_TEST_ENV_MERCHANT_ID') : "";
         $this->api = new WeBirrClient($this->merchantId, $this->apiKey, true);
-        $this->lastTimeStamp = '20250224120000'; // Example timestamp, replace with your actual last timestamp retrieved from your database to current date stamp for first time call
+        $this->lastTimeStamp = '20250224120000'; // Example cursor. Save the last processed payment updateTimeStamp in your database.
     }
 
     public function Run()
@@ -314,7 +316,7 @@ class PaymentProcessor
 
             if (count($response->res) > 0) {
                 $this->lastTimeStamp = $response->res[count($response->res) - 1]->updateTimeStamp;
-                echo "\nLast Timestamp: " . $this->lastTimeStamp; // save this to your database for next polling/call to getPayments()
+                echo "\nLast Timestamp: " . $this->lastTimeStamp; // save updateTimeStamp to your database for the next getPayments() call
             }
 
         } else {
