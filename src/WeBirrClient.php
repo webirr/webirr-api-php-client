@@ -3,6 +3,7 @@
 namespace WeBirr;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 
 /*
 class ApiResponse 
@@ -31,22 +32,28 @@ class WeBirrClient
    * @param {string} merchantId
    * @param {string} apiKey 
    * @param {boolean} isTestEnv 
+   * @param {ClientInterface|null} client Optional configured Guzzle client for connection reuse/custom handlers.
    */
-  public function __construct(string $merchantId, string $apiKey, bool $isTestEnv)
+  public function __construct(string $merchantId, string $apiKey, bool $isTestEnv, ?ClientInterface $client = null)
   {
     $this->merchantId = $merchantId;
     $this->apiKey = $apiKey;
-    $this->client = new Client(['base_uri' => $isTestEnv ? 'https://api.webirr.net/' : 'https://api.webirr.net:8080/']);
+    $this->client = $client ?: new Client(['base_uri' => $isTestEnv ? 'https://api.webirr.net/' : 'https://api.webirr.net:8080/']);
   }
 
   private function query(array $params = []): string
   {
+    $query = [
+      'api_key' => $this->apiKey
+    ];
+
+    if ($this->merchantId !== '') {
+      $query['merchant_id'] = $this->merchantId;
+    }
+
     return http_build_query(
       array_merge(
-        [
-          'api_key' => $this->apiKey,
-          'merchant_id' => $this->merchantId
-        ],
+        $query,
         $params
       ),
       '',
@@ -57,7 +64,10 @@ class WeBirrClient
 
   private function prepareBill(Bill $bill): Bill
   {
-    $bill->merchantID = $this->merchantId;
+    if ($this->merchantId !== '') {
+      $bill->merchantID = $this->merchantId;
+    }
+
     return $bill;
   }
 
@@ -79,7 +89,7 @@ class WeBirrClient
   public function createBill(Bill $bill)
   {
     $bill = $this->prepareBill($bill);
-    $response = $this->client->post('einvoice/api/bill?' . $this->query(), ['json' => $bill->toArray()]);
+    $response = $this->client->request('POST', 'einvoice/api/bill?' . $this->query(), ['json' => $bill->toArray()]);
 
     return $this->decodeResponse($response);
   }
@@ -94,7 +104,7 @@ class WeBirrClient
   public function updateBill(Bill $bill)
   {
     $bill = $this->prepareBill($bill);
-    $response = $this->client->put('einvoice/api/bill?' . $this->query(), ['json' => $bill->toArray()]);
+    $response = $this->client->request('PUT', 'einvoice/api/bill?' . $this->query(), ['json' => $bill->toArray()]);
 
     return $this->decodeResponse($response);
   }
@@ -108,7 +118,8 @@ class WeBirrClient
    */
   public function deleteBill(string $paymentCode)
   {
-    $response = $this->client->delete(
+    $response = $this->client->request(
+      'DELETE',
       'einvoice/api/bill?' . $this->query(['wbc_code' => $paymentCode]),
       ['json' => []]
     );
@@ -127,7 +138,7 @@ class WeBirrClient
    */
   public function getPaymentStatus(string $paymentCode)
   {
-    $response = $this->client->get('einvoice/api/paymentStatus?' . $this->query(['wbc_code' => $paymentCode]));
+    $response = $this->client->request('GET', 'einvoice/api/paymentStatus?' . $this->query(['wbc_code' => $paymentCode]));
 
     return $this->decodeResponse($response);
   }
@@ -139,7 +150,7 @@ class WeBirrClient
    */
   public function getBillByReference(string $billReference)
   {
-    $response = $this->client->get('einvoice/api/bill?' . $this->query(['bill_reference' => $billReference]));
+    $response = $this->client->request('GET', 'einvoice/api/bill?' . $this->query(['bill_reference' => $billReference]));
 
     return $this->decodeResponse($response);
   }
@@ -151,7 +162,7 @@ class WeBirrClient
    */
   public function getBillByPaymentCode(string $paymentCode)
   {
-    $response = $this->client->get('einvoice/api/bill?' . $this->query(['wbc_code' => $paymentCode]));
+    $response = $this->client->request('GET', 'einvoice/api/bill?' . $this->query(['wbc_code' => $paymentCode]));
 
     return $this->decodeResponse($response);
   }
@@ -172,7 +183,7 @@ class WeBirrClient
    */
   public function getPayments(string $lastTimeStamp,int $limit)
   {
-    $response = $this->client->get('einvoice/api/payments?' . $this->query(['last_timestamp' => $lastTimeStamp, 'limit' => $limit]));
+    $response = $this->client->request('GET', 'einvoice/api/payments?' . $this->query(['last_timestamp' => $lastTimeStamp, 'limit' => $limit]));
 
     return $this->decodeResponse($response);
   }
@@ -186,7 +197,7 @@ class WeBirrClient
    */
   public function getBills(int $paymentStatus = -1, string $lastTimeStamp = "", int $limit = 100)
   {
-    $response = $this->client->get('einvoice/api/bills?' . $this->query([
+    $response = $this->client->request('GET', 'einvoice/api/bills?' . $this->query([
       'payment_status' => $paymentStatus,
       'last_timestamp' => $lastTimeStamp,
       'limit' => $limit
@@ -205,7 +216,7 @@ class WeBirrClient
    */
   public function getStat(string $dateFrom, string $dateTo)
   {
-    $response = $this->client->get('merchant/stat?' . $this->query(['date_from' => $dateFrom, 'date_to' => $dateTo]));
+    $response = $this->client->request('GET', 'merchant/stat?' . $this->query(['date_from' => $dateFrom, 'date_to' => $dateTo]));
 
     return $this->decodeResponse($response);
   }

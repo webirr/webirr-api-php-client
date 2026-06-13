@@ -558,3 +558,42 @@ function main()
 main();
 
 ```
+
+## Examples
+
+The `examples` directory includes separate workflows matching the README examples:
+
+```bash
+php examples/example1-create-update-bill.php
+php examples/example2-payment-status-single-poll.php
+php examples/example3-delete-bill.php
+php examples/example4-payment-status-bulk-poll.php
+php examples/example5-stat-report.php
+php examples/example6-payment-status-webhook.php
+php examples/example7-get-bill-and-list-bills.php
+```
+
+## Backward Compatibility
+
+Use the current 2.x constructor with merchant ID, API key, and environment:
+
+```php
+$api = new WeBirrClient($merchantId, $apiKey, true);
+```
+
+The SDK sets `Bill::$merchantID` from the client before create/update calls.
+Application code should not set `merchantID` manually in normal examples.
+
+For batch or mass bill workloads, you can pass a configured Guzzle client as
+the fourth argument so your application can reuse handlers, middleware,
+connection settings, and retry policy:
+
+```php
+use GuzzleHttp\Client;
+
+$guzzle = new Client([
+    'base_uri' => 'https://api.webirr.net/', // TestEnv. Use https://api.webirr.net:8080/ for production.
+]);
+
+$api = new WeBirrClient($merchantId, $apiKey, true, $guzzle);
+```
