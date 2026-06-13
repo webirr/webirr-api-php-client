@@ -1,5 +1,17 @@
 # Release Notes
 
+## 2.1.3
+
+### Changed
+
+- README bill lookup and bill listing examples now show the same success,
+  failure, and `errorCode` handling pattern used by the other examples.
+
+### Verification
+
+- `composer test`
+- `composer test:testenv`
+
 ## 2.1.2
 
 ### Changed
