@@ -4,6 +4,11 @@ namespace WeBirr\Tests;
 
 require 'vendor/autoload.php';
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use WeBirr\Bill;
 use WeBirr\Payment;
@@ -19,6 +24,64 @@ class WeBirrTest extends TestCase
         $api->createBill($bill);
 
         $this->assertSame('merchant-from-client', $bill->merchantID);
+    }
+
+    public function testPrepareBillDoesNotOverwriteExistingMerchantIdWhenClientMerchantIdIsEmpty()
+    {
+        $bill = $this->sampleBill();
+        $bill->merchantID = 'merchant-on-bill';
+        $api = new WeBirrClient('', 'x', true);
+
+        $this->prepareBill($api, $bill);
+
+        $this->assertSame('merchant-on-bill', $bill->merchantID);
+    }
+
+    public function testQueryIncludesMerchantIdForAllEndpointParameterShapesWhenConfigured()
+    {
+        $api = new WeBirrClient('merchant-from-client', 'x', true);
+
+        foreach ($this->endpointQueryParams() as $endpoint => $params) {
+            parse_str($this->queryString($api, $params), $query);
+
+            $this->assertSame('merchant-from-client', $query['merchant_id'] ?? null, $endpoint);
+        }
+    }
+
+    public function testQueryOmitsMerchantIdForAllEndpointParameterShapesWhenClientMerchantIdIsEmpty()
+    {
+        $api = new WeBirrClient('', 'x', true);
+
+        foreach ($this->endpointQueryParams() as $endpoint => $params) {
+            parse_str($this->queryString($api, $params), $query);
+
+            $this->assertArrayNotHasKey('merchant_id', $query, $endpoint);
+        }
+    }
+
+    public function testConstructorCanUseInjectedGuzzleClientForRequests()
+    {
+        $history = [];
+        $mock = new MockHandler([
+            new Response(200, [], '{"error":null,"res":"OK"}')
+        ]);
+        $handlerStack = HandlerStack::create($mock);
+        $handlerStack->push(Middleware::history($history));
+        $client = new Client([
+            'handler' => $handlerStack,
+            'base_uri' => 'https://api.webirr.net/'
+        ]);
+        $api = new WeBirrClient('merchant-from-client', 'x', true, $client);
+
+        $res = $api->deleteBill('123 456 789');
+
+        $this->assertEmpty($res->error);
+        $this->assertSame('OK', $res->res);
+        $this->assertCount(1, $history);
+        $this->assertSame('DELETE', $history[0]['request']->getMethod());
+        $uri = (string)$history[0]['request']->getUri();
+        $this->assertStringContainsString('merchant_id=merchant-from-client', $uri);
+        $this->assertStringContainsString('wbc_code=123%20456%20789', $uri);
     }
 
     public function testBillSerializesCustomerPhone()
@@ -167,5 +230,34 @@ class WeBirrTest extends TestCase
             !empty($res->error) || !empty($res->errorCode),
             'Expected API error response.'
         );
+    }
+
+    private function endpointQueryParams(): array
+    {
+        return [
+            'createBill' => [],
+            'updateBill' => [],
+            'deleteBill' => ['wbc_code' => '123 456 789'],
+            'getPaymentStatus' => ['wbc_code' => '123 456 789'],
+            'getBillByReference' => ['bill_reference' => 'php/unit/1'],
+            'getBillByPaymentCode' => ['wbc_code' => '123 456 789'],
+            'getBills' => ['payment_status' => -1, 'last_timestamp' => '20251231', 'limit' => 10],
+            'getPayments' => ['last_timestamp' => '20251231', 'limit' => 10],
+            'getStat' => ['date_from' => '2025-01-01', 'date_to' => '2025-01-02'],
+        ];
+    }
+
+    private function queryString(WeBirrClient $api, array $params = []): string
+    {
+        $method = new \ReflectionMethod(WeBirrClient::class, 'query');
+
+        return $method->invoke($api, $params);
+    }
+
+    private function prepareBill(WeBirrClient $api, Bill $bill): Bill
+    {
+        $method = new \ReflectionMethod(WeBirrClient::class, 'prepareBill');
+
+        return $method->invoke($api, $bill);
     }
 }

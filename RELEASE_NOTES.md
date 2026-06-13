@@ -1,5 +1,27 @@
 # Release Notes
 
+## 2.2.0
+
+### Added
+
+- `WeBirrClient` can now accept an optional configured Guzzle client as the
+  fourth constructor argument for reusable handlers, middleware, connection
+  settings, and application-controlled retry policy.
+- Tests now verify injected Guzzle client usage and `merchant_id` query handling
+  across all SDK endpoint parameter shapes.
+
+### Changed
+
+- `WeBirrClient` omits empty `merchant_id` query parameters and does not
+  overwrite an existing bill `merchantID` when the client merchant ID is empty.
+- README now lists standalone examples and documents the optional Guzzle client
+  path for batch/mass bill workloads.
+
+### Verification
+
+- `composer test`
+- `composer test:testenv`
+
 ## 2.1.3
 
 ### Changed
