@@ -36,7 +36,7 @@ Use the existing local git identity. Do not override `git config user.name` or
 
 ```bash
 git status --short
-git add README.md RELEASE.md RELEASE_NOTES.md TASKS.md composer.json composer.lock src tests examples
+git add README.md RELEASE.md RELEASE_NOTES.md composer.json composer.lock src tests examples
 git commit -m "Prepare PHP SDK patch release 2.1.3"
 git tag v2.1.3
 git push origin main
