@@ -1,5 +1,19 @@
 # Release Notes
 
+## 2.1.2
+
+### Changed
+
+- README and examples now use explicit `lastTimeStamp` cursor samples such as
+  `20251231` instead of empty-string full-history scans.
+- Cursor documentation now notes that timestamps can be date-only
+  (`yyyyMMdd`) or include time precision (`yyyyMMddHHmmss`).
+
+### Verification
+
+- `composer test`
+- `composer test:testenv`
+
 ## 2.1.1
 
 ### Added

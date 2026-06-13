@@ -128,7 +128,7 @@ function main()
     }
 
     $paymentStatus = -1; // -1 all, 0 pending, 1 unconfirmed payment, 2 paid.
-    $lastTimeStamp = ""; // Empty string starts from the beginning.
+    $lastTimeStamp = "20251231"; // Date-only cursor; use "20251231235959" when you need time precision.
     $limit = 10;
 
     $res = $api->getBills($paymentStatus, $lastTimeStamp, $limit);
@@ -140,6 +140,10 @@ function main()
 main();
 
 ```
+
+Timestamp cursors can be date-only (`yyyyMMdd`) or include time
+(`yyyyMMddHHmmss`). Use empty string only when you intentionally want all
+history from the beginning.
 
 ### Getting Payment status of an existing Bill from WeBirr Servers
 
