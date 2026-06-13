@@ -25,6 +25,7 @@ Status legend: `todo`, `in_progress`, `done`, `blocked`.
 | PHP-SDK-019 | done | Prefer `Payment::$paymentDate`, keep `Payment::$time` as a deprecated alias, and normalize both response shapes. |
 | PHP-SDK-020 | done | Prepare PHP SDK patch release `2.1.1`. |
 | PHP-SDK-021 | done | Prepare PHP SDK patch release `2.1.2` for timestamp cursor examples and docs. |
+| PHP-SDK-022 | done | Prepare PHP SDK patch release `2.1.3` for README result-handling examples. |
 
 ## Verification
 
