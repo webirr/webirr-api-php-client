@@ -112,28 +112,52 @@ function main()
 
     $api = new WeBirrClient($merchantId, $apiKey, true);
 
-    $billReference = "YOUR_BILL_REFERENCE";
-    $paymentCode = "YOUR_PAYMENT_CODE";
+    $billReference = "YOUR_BILL_REFERENCE"; // BILL_REFERENCE_YOU_SAVED_AFTER_CREATING_A_NEW_BILL
+    $paymentCode = "YOUR_PAYMENT_CODE"; // PAYMENT_CODE_YOU_SAVED_AFTER_CREATING_A_NEW_BILL
 
+    echo "\nGetting bill by reference...";
     $res = $api->getBillByReference($billReference);
     if (!$res->error) {
-        echo "\nBill found by reference";
+        // success
+        echo "\nBill found by reference.";
+        echo "\n";
         print_r($res->res);
+    } else {
+        // fail
+        echo "\nError: " . $res->error;
+        echo "\nError Code: " . $res->errorCode;
     }
 
+    echo "\nGetting bill by payment code...";
     $res = $api->getBillByPaymentCode($paymentCode);
     if (!$res->error) {
-        echo "\nBill found by payment code";
+        // success
+        echo "\nBill found by payment code.";
+        echo "\n";
         print_r($res->res);
+    } else {
+        // fail
+        echo "\nError: " . $res->error;
+        echo "\nError Code: " . $res->errorCode;
     }
 
+    echo "\nListing bills...";
     $paymentStatus = -1; // -1 all, 0 pending, 1 unconfirmed payment, 2 paid.
     $lastTimeStamp = "20251231"; // Date-only cursor; use "20251231235959" when you need time precision.
     $limit = 10;
 
     $res = $api->getBills($paymentStatus, $lastTimeStamp, $limit);
     if (!$res->error) {
+        // success
         echo "\nBills returned: " . count($res->res);
+        foreach ($res->res as $bill) {
+            echo "\n-----------------------------";
+            print_r($bill);
+        }
+    } else {
+        // fail
+        echo "\nError: " . $res->error;
+        echo "\nError Code: " . $res->errorCode;
     }
 }
 
