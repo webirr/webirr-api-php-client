@@ -15,6 +15,7 @@ class WeBirrTest_ext extends TestCase
     private const CUSTOMER_CODE = 'sdk-test-customer';
     private const CREATED_CUSTOMER_NAME = 'SDK Test Customer';
     private const UPDATED_CUSTOMER_NAME = 'SDK Test Customer Updated';
+    private const CUSTOMER_PHONE = '0911000000';
     private const DESCRIPTION = 'SDK Test Bill';
 
     private static $paymentCode = null;
@@ -166,6 +167,7 @@ class WeBirrTest_ext extends TestCase
         $bill->amount = self::CREATED_AMOUNT;
         $bill->customerCode = self::CUSTOMER_CODE;
         $bill->customerName = self::CREATED_CUSTOMER_NAME;
+        $bill->customerPhone = self::CUSTOMER_PHONE;
         $bill->time = date('Y-m-d H:i');
         $bill->description = self::DESCRIPTION;
         $bill->billReference = self::$billReference;
@@ -197,6 +199,7 @@ class WeBirrTest_ext extends TestCase
         $this->assertSame(self::$merchantId, $bill->merchantID);
         $this->assertSame(strtoupper(self::CUSTOMER_CODE), $bill->customerCode);
         $this->assertSame(self::UPDATED_CUSTOMER_NAME, $bill->customerName);
+        $this->assertSame(self::CUSTOMER_PHONE, $bill->customerPhone);
         $this->assertSame(self::DESCRIPTION, $bill->description);
         $this->assertSame(0, $bill->paymentStatus);
         $this->assertSame(

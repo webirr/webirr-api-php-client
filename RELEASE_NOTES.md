@@ -1,5 +1,27 @@
 # Release Notes
 
+## 2.1.1
+
+### Added
+
+- `Bill::$customerPhone` is now included in PHP bill create/update payloads and
+  TestEnv bill retrieval assertions.
+
+### Changed
+
+- `Bill::$customerPhone` defaults to an empty string for backward compatibility.
+- Empty `Bill::$extras` now serializes as an empty JSON object for the gateway
+  dictionary shape.
+- `Payment::$paymentDate` is the preferred payment time field; `Payment::$time`
+  remains available as a deprecated backward-compatible alias.
+- Bulk payment polling docs clarify that callers should persist
+  `updateTimeStamp` as the next polling cursor.
+
+### Verification
+
+- `composer test`
+- `composer test:testenv`
+
 ## 2.1.0
 
 Planned backward-compatible PHP SDK enhancement release.

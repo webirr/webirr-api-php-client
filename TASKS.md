@@ -1,4 +1,4 @@
-# PHP SDK 2.1.0 Task List
+# PHP SDK Task List
 
 Status legend: `todo`, `in_progress`, `done`, `blocked`.
 
@@ -19,6 +19,11 @@ Status legend: `todo`, `in_progress`, `done`, `blocked`.
 | PHP-SDK-013 | done | Run PHP/Composer validation, syntax checks, normal tests, and live TestEnv smoke tests locally. |
 | PHP-SDK-014 | todo | Separate future task: build the SQLite bill synchronization example with local bill/payment state, bulk payment polling, retry metadata, and TestEnv verification. |
 | PHP-SDK-015 | done | Bound Composer dependency ranges and refresh the lock file so the test dependency set has no known Composer audit advisories. |
+| PHP-SDK-016 | done | Add `Bill::$customerPhone` to PHP bill payloads and verify it in TestEnv bill retrieval. |
+| PHP-SDK-017 | done | Make `Bill::$customerPhone` optional with a backward-compatible empty-string default. |
+| PHP-SDK-018 | done | Serialize empty `Bill::$extras` as an empty JSON object instead of a fake empty-key dictionary. |
+| PHP-SDK-019 | done | Prefer `Payment::$paymentDate`, keep `Payment::$time` as a deprecated alias, and normalize both response shapes. |
+| PHP-SDK-020 | done | Prepare PHP SDK patch release `2.1.1`. |
 
 ## Verification
 
@@ -26,9 +31,9 @@ Status legend: `todo`, `in_progress`, `done`, `blocked`.
   package declares an explicit `version` field.
 - `composer audit` reports no known vulnerability advisories.
 - `php -l` passes for every PHP file under `src`, `tests`, and `examples`.
-- `composer test` passes: 10 tests, 19 assertions.
+- `composer test` passes: 16 tests, 27 assertions.
 - `composer test:testenv` passes against WeBirr TestEnv merchant `0305`: 9 tests,
-  62 assertions.
+  65 assertions.
 
 ## Resume Note
 

@@ -6,6 +6,7 @@ require 'vendor/autoload.php';
 
 use PHPUnit\Framework\TestCase;
 use WeBirr\Bill;
+use WeBirr\Payment;
 use WeBirr\WeBirrClient;
 
 class WeBirrTest extends TestCase
@@ -18,6 +19,55 @@ class WeBirrTest extends TestCase
         $api->createBill($bill);
 
         $this->assertSame('merchant-from-client', $bill->merchantID);
+    }
+
+    public function testBillSerializesCustomerPhone()
+    {
+        $bill = $this->sampleBill();
+
+        $this->assertSame('0911000000', $bill->toArray()['customerPhone']);
+    }
+
+    public function testBillSerializesWithoutCustomerPhone()
+    {
+        $bill = $this->sampleBill(false);
+
+        $this->assertSame('', $bill->toArray()['customerPhone']);
+    }
+
+    public function testBillSerializesEmptyExtrasAsJsonObject()
+    {
+        $bill = $this->sampleBill();
+
+        $this->assertSame('{"extras":{}}', json_encode(['extras' => $bill->toArray()['extras']]));
+    }
+
+    public function testBillSerializesPopulatedExtrasAsJsonObject()
+    {
+        $bill = $this->sampleBill();
+        $bill->extras = ['source' => 'unit-test'];
+
+        $this->assertSame('{"extras":{"source":"unit-test"}}', json_encode(['extras' => $bill->toArray()['extras']]));
+    }
+
+    public function testPaymentUsesPaymentDateAsTimeAlias()
+    {
+        $payment = new Payment((object)[
+            'paymentDate' => '2026-06-12 10:11:12'
+        ]);
+
+        $this->assertSame('2026-06-12 10:11:12', $payment->paymentDate);
+        $this->assertSame($payment->paymentDate, $payment->time);
+    }
+
+    public function testPaymentKeepsLegacyTimeAsPaymentDateAlias()
+    {
+        $payment = new Payment((object)[
+            'time' => '2026-06-12 10:11:12'
+        ]);
+
+        $this->assertSame('2026-06-12 10:11:12', $payment->time);
+        $this->assertSame($payment->time, $payment->paymentDate);
     }
 
     public function testCreateBillShouldGetErrorFromWebServiceOnInvalidApiKeyTestEnv()
@@ -94,12 +144,15 @@ class WeBirrTest extends TestCase
         $this->assertApiError($res);
     }
 
-    private function sampleBill()
+    private function sampleBill(bool $withCustomerPhone = true)
     {
         $bill = new Bill();
         $bill->amount = '270.90';
         $bill->customerCode = 'sdk-test-customer';
         $bill->customerName = 'SDK Test Customer';
+        if ($withCustomerPhone) {
+            $bill->customerPhone = '0911000000';
+        }
         $bill->time = date('Y-m-d H:i');
         $bill->description = 'SDK test bill';
         $bill->billReference = 'php/unit/' . time();

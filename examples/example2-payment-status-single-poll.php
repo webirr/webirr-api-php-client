@@ -32,6 +32,7 @@ function main()
           echo "\nBank: $payment->bankID";
           echo "\nBank Reference Number: $payment->paymentReference";
           echo "\nAmount Paid: $payment->amount";
+          echo "\nPayment Date: $payment->paymentDate";
         } else
           echo "\nbill is pending payment";
       } else {
