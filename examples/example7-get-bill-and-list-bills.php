@@ -39,7 +39,7 @@ function main()
 
     echo "\nListing bills...";
     $paymentStatus = -1; // -1 all, 0 pending, 1 unconfirmed payment, 2 paid.
-    $lastTimeStamp = ""; // Empty string starts from the beginning.
+    $lastTimeStamp = "20251231"; // Date-only cursor; use "20251231235959" when you need time precision.
     $limit = 10;
 
     $response = $api->getBills($paymentStatus, $lastTimeStamp, $limit);

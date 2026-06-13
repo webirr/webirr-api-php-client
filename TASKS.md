@@ -24,6 +24,7 @@ Status legend: `todo`, `in_progress`, `done`, `blocked`.
 | PHP-SDK-018 | done | Serialize empty `Bill::$extras` as an empty JSON object instead of a fake empty-key dictionary. |
 | PHP-SDK-019 | done | Prefer `Payment::$paymentDate`, keep `Payment::$time` as a deprecated alias, and normalize both response shapes. |
 | PHP-SDK-020 | done | Prepare PHP SDK patch release `2.1.1`. |
+| PHP-SDK-021 | done | Prepare PHP SDK patch release `2.1.2` for timestamp cursor examples and docs. |
 
 ## Verification
 

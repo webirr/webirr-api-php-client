@@ -129,7 +129,7 @@ class WeBirrTest_ext extends TestCase
 
     public function testGetPayments()
     {
-        $res = self::$api->getPayments('', 10);
+        $res = self::$api->getPayments('20251231', 10);
 
         $this->assertNoApiError($res, 'GetPayments');
         $this->assertIsArray($res->res, 'Payment list should return an array.');

@@ -131,7 +131,7 @@ class WeBirrTest extends TestCase
     public function testGetPaymentsShouldGetErrorFromWebServiceOnInvalidApiKey()
     {
         $api = new WeBirrClient('x', 'x', true);
-        $res = $api->getPayments('', 10);
+        $res = $api->getPayments('20251231', 10);
 
         $this->assertApiError($res);
     }
