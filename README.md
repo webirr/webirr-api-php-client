@@ -508,6 +508,54 @@ $webhook->handleRequest();
 
 ```
 
+### Getting Supported Banks
+
+```php
+
+<?php
+
+require 'vendor/autoload.php';
+
+use WeBirr\WeBirrClient;
+use WeBirr\SupportedBank;
+
+// Get banks and wallets configured for the merchant.
+function main()
+{
+    $apiKey = getenv('WEBIRR_TEST_ENV_API_KEY') !== false ? getenv('WEBIRR_TEST_ENV_API_KEY') : "";
+    $merchantId = getenv('WEBIRR_TEST_ENV_MERCHANT_ID') !== false ? getenv('WEBIRR_TEST_ENV_MERCHANT_ID') : "";
+
+    //$apiKey = 'YOUR_API_KEY';
+    //$merchantId = 'YOUR_MERCHANT_ID';
+
+    $api = new WeBirrClient($merchantId, $apiKey, true);
+
+    echo "\nGetting supported banks...";
+
+    $response = $api->getSupportedBanks();
+
+    if (!$response->error) {
+        // success
+        foreach ($response->res as $obj) {
+            $bank = new SupportedBank($obj);
+            echo "\n" . $bank->bankID . " - " . $bank->name;
+        }
+    } else {
+        // error
+        echo "\nError: " . $response->error;
+        echo "\nError Code: " . $response->errorCode;
+    }
+}
+
+main();
+
+```
+
+Checkout applications should use this merchant-specific list when showing
+payment instructions, for example `{Bank Name} -> WeBirr -> Payment Code`.
+Do not show a broad global bank list in checkout UI; show only banks returned
+for the configured merchant.
+
 ### Gettting basic Statistics about bills created and payments received for a date range 
 
 ```php
@@ -571,6 +619,7 @@ php examples/example4-payment-status-bulk-poll.php
 php examples/example5-stat-report.php
 php examples/example6-payment-status-webhook.php
 php examples/example7-get-bill-and-list-bills.php
+php examples/example8-supported-banks.php
 ```
 
 ## Backward Compatibility

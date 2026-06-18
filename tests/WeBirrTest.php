@@ -12,6 +12,7 @@ use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use WeBirr\Bill;
 use WeBirr\Payment;
+use WeBirr\SupportedBank;
 use WeBirr\WeBirrClient;
 
 class WeBirrTest extends TestCase
@@ -82,6 +83,45 @@ class WeBirrTest extends TestCase
         $uri = (string)$history[0]['request']->getUri();
         $this->assertStringContainsString('merchant_id=merchant-from-client', $uri);
         $this->assertStringContainsString('wbc_code=123%20456%20789', $uri);
+    }
+
+    public function testGetSupportedBanksUsesCanonicalEndpoint()
+    {
+        $history = [];
+        $mock = new MockHandler([
+            new Response(200, [], '{"error":null,"res":[{"bankID":"cbe_mobile","name":"CBE Mobile Banking"}]}')
+        ]);
+        $handlerStack = HandlerStack::create($mock);
+        $handlerStack->push(Middleware::history($history));
+        $client = new Client([
+            'handler' => $handlerStack,
+            'base_uri' => 'https://api.webirr.net/'
+        ]);
+        $api = new WeBirrClient('merchant-from-client', 'x', true, $client);
+
+        $res = $api->getSupportedBanks();
+        $bank = new SupportedBank($res->res[0]);
+
+        $this->assertEmpty($res->error);
+        $this->assertSame('cbe_mobile', $bank->bankID);
+        $this->assertSame('CBE Mobile Banking', $bank->name);
+        $this->assertCount(1, $history);
+        $this->assertSame('GET', $history[0]['request']->getMethod());
+        $uri = (string)$history[0]['request']->getUri();
+        $this->assertStringContainsString('einvoice/api/banks', $uri);
+        $this->assertStringContainsString('merchant_id=merchant-from-client', $uri);
+        $this->assertStringContainsString('api_key=x', $uri);
+    }
+
+    public function testSupportedBankMapsGatewayFields()
+    {
+        $bank = new SupportedBank((object)[
+            'bankID' => 'telebirr',
+            'name' => 'Telebirr'
+        ]);
+
+        $this->assertSame('telebirr', $bank->bankID);
+        $this->assertSame('Telebirr', $bank->name);
     }
 
     public function testBillSerializesCustomerPhone()
@@ -207,6 +247,14 @@ class WeBirrTest extends TestCase
         $this->assertApiError($res);
     }
 
+    public function testGetSupportedBanksShouldGetErrorFromWebServiceOnInvalidApiKey()
+    {
+        $api = new WeBirrClient('x', 'x', true);
+        $res = $api->getSupportedBanks();
+
+        $this->assertApiError($res);
+    }
+
     private function sampleBill(bool $withCustomerPhone = true)
     {
         $bill = new Bill();
@@ -243,6 +291,7 @@ class WeBirrTest extends TestCase
             'getBillByPaymentCode' => ['wbc_code' => '123 456 789'],
             'getBills' => ['payment_status' => -1, 'last_timestamp' => '20251231', 'limit' => 10],
             'getPayments' => ['last_timestamp' => '20251231', 'limit' => 10],
+            'getSupportedBanks' => [],
             'getStat' => ['date_from' => '2025-01-01', 'date_to' => '2025-01-02'],
         ];
     }
