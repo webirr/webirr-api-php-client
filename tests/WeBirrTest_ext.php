@@ -6,6 +6,7 @@ require 'vendor/autoload.php';
 
 use PHPUnit\Framework\TestCase;
 use WeBirr\Bill;
+use WeBirr\SupportedBank;
 use WeBirr\WeBirrClient;
 
 class WeBirrTest_ext extends TestCase
@@ -141,6 +142,20 @@ class WeBirrTest_ext extends TestCase
 
         $this->assertNoApiError($res, 'GetStat');
         $this->assertNotEmpty($res->res, 'Stats should return a result object.');
+    }
+
+    public function testGetSupportedBanks()
+    {
+        $res = self::$api->getSupportedBanks();
+
+        $this->assertNoApiError($res, 'GetSupportedBanks');
+        $this->assertIsArray($res->res, 'Supported banks should return an array.');
+
+        foreach ($res->res as $obj) {
+            $bank = new SupportedBank($obj);
+            $this->assertNotSame('', $bank->bankID, 'Supported bank should include bankID.');
+            $this->assertNotSame('', $bank->name, 'Supported bank should include name.');
+        }
     }
 
     /**
