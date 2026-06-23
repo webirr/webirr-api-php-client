@@ -641,7 +641,8 @@ connection settings, and retry policy:
 use GuzzleHttp\Client;
 
 $guzzle = new Client([
-    'base_uri' => 'https://api.webirr.net/', // TestEnv. Use https://api.webirr.net:8080/ for production.
+    'timeout' => 30,
+    'connect_timeout' => 10,
 ]);
 
 $api = new WeBirrClient($merchantId, $apiKey, true, $guzzle);

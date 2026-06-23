@@ -85,6 +85,58 @@ class WeBirrTest extends TestCase
         $this->assertStringContainsString('wbc_code=123%20456%20789', $uri);
     }
 
+    public function testTestEnvDefaultsToDevGatewayAndIgnoresInjectedBaseUri()
+    {
+        $history = [];
+        $api = new WeBirrClient(
+            'merchant-from-client',
+            'x',
+            true,
+            $this->mockClient($history, 'https://should-not-be-used.example/')
+        );
+
+        $api->deleteBill('123 456 789');
+
+        $uri = (string)$history[0]['request']->getUri();
+        $this->assertStringStartsWith('https://api.webirr.dev/einvoice/api/bill?', $uri);
+    }
+
+    public function testTestEnvCanUseInternalGatewayUrlOverride()
+    {
+        $this->withGatewayUrl('https://local-gateway.example/', function () {
+            $history = [];
+            $api = new WeBirrClient(
+                'merchant-from-client',
+                'x',
+                true,
+                $this->mockClient($history, 'https://should-not-be-used.example/')
+            );
+
+            $api->deleteBill('123 456 789');
+
+            $uri = (string)$history[0]['request']->getUri();
+            $this->assertStringStartsWith('https://local-gateway.example/einvoice/api/bill?', $uri);
+        });
+    }
+
+    public function testProductionIgnoresInternalGatewayUrlOverride()
+    {
+        $this->withGatewayUrl('https://local-gateway.example/', function () {
+            $history = [];
+            $api = new WeBirrClient(
+                'merchant-from-client',
+                'x',
+                false,
+                $this->mockClient($history, 'https://should-not-be-used.example/')
+            );
+
+            $api->deleteBill('123 456 789');
+
+            $uri = (string)$history[0]['request']->getUri();
+            $this->assertStringStartsWith('https://api.webirr.net:8080/einvoice/api/bill?', $uri);
+        });
+    }
+
     public function testGetSupportedBanksUsesCanonicalEndpoint()
     {
         $history = [];
@@ -278,6 +330,36 @@ class WeBirrTest extends TestCase
             !empty($res->error) || !empty($res->errorCode),
             'Expected API error response.'
         );
+    }
+
+    private function mockClient(array &$history, string $baseUri): Client
+    {
+        $mock = new MockHandler([
+            new Response(200, [], '{"error":null,"res":"OK"}')
+        ]);
+        $handlerStack = HandlerStack::create($mock);
+        $handlerStack->push(Middleware::history($history));
+
+        return new Client([
+            'handler' => $handlerStack,
+            'base_uri' => $baseUri
+        ]);
+    }
+
+    private function withGatewayUrl(string $value, callable $callback): void
+    {
+        $previous = getenv('GATEWAY_URL');
+        putenv('GATEWAY_URL=' . $value);
+
+        try {
+            $callback();
+        } finally {
+            if ($previous === false) {
+                putenv('GATEWAY_URL');
+            } else {
+                putenv('GATEWAY_URL=' . $previous);
+            }
+        }
     }
 
     private function endpointQueryParams(): array
