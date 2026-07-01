@@ -6,15 +6,19 @@ require 'vendor/autoload.php';
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ServerException;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use WeBirr\Bill;
 use WeBirr\Payment;
 use WeBirr\SupportedBank;
+use WeBirr\TransientErrors;
 use WeBirr\WeBirrClient;
 
 class WeBirrTest extends TestCase
@@ -191,6 +195,37 @@ class WeBirrTest extends TestCase
         $this->expectException(ServerException::class);
 
         $api->deleteBill('123 456 789');
+    }
+
+    public function testTransientErrorsClassifiesRetryablePlatformFailures()
+    {
+        $request = new Request('GET', 'https://api.webirr.dev/einvoice/api/banks');
+
+        $this->assertTrue(TransientErrors::isTransient(new ServerException(
+            'gateway unavailable',
+            $request,
+            new Response(503)
+        )));
+        $this->assertTrue(TransientErrors::isTransient(new ClientException(
+            'rate limited',
+            $request,
+            new Response(429)
+        )));
+        $this->assertTrue(TransientErrors::isTransient(new ClientException(
+            'request timeout',
+            $request,
+            new Response(408)
+        )));
+        $this->assertFalse(TransientErrors::isTransient(new ClientException(
+            'bad request',
+            $request,
+            new Response(400)
+        )));
+        $this->assertTrue(TransientErrors::isTransient(new ConnectException(
+            'connection refused',
+            $request
+        )));
+        $this->assertFalse(TransientErrors::isTransient(new RuntimeException('Invalid JSON response')));
     }
 
     public function testInvalidJsonThrowsRuntimeException()
