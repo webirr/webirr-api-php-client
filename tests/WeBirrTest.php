@@ -5,11 +5,13 @@ namespace WeBirr\Tests;
 require 'vendor/autoload.php';
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use WeBirr\Bill;
 use WeBirr\Payment;
 use WeBirr\SupportedBank;
@@ -174,6 +176,66 @@ class WeBirrTest extends TestCase
 
         $this->assertSame('telebirr', $bank->bankID);
         $this->assertSame('Telebirr', $bank->name);
+    }
+
+    public function testNon2xxThrowsEvenWhenInjectedClientDisablesHttpErrors()
+    {
+        $client = new Client([
+            'handler' => HandlerStack::create(new MockHandler([
+                new Response(500, [], '{"error":"gateway down"}')
+            ])),
+            'http_errors' => false
+        ]);
+        $api = new WeBirrClient('merchant-from-client', 'x', true, $client);
+
+        $this->expectException(ServerException::class);
+
+        $api->deleteBill('123 456 789');
+    }
+
+    public function testInvalidJsonThrowsRuntimeException()
+    {
+        $api = new WeBirrClient('merchant-from-client', 'x', true, $this->mockClientWithBody('{bad json'));
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid JSON response');
+
+        $api->deleteBill('123 456 789');
+    }
+
+    public function testEmptyJsonThrowsRuntimeException()
+    {
+        $api = new WeBirrClient('merchant-from-client', 'x', true, $this->mockClientWithBody(''));
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Empty JSON response');
+
+        $api->deleteBill('123 456 789');
+    }
+
+    public function testNonObjectJsonThrowsRuntimeException()
+    {
+        $api = new WeBirrClient('merchant-from-client', 'x', true, $this->mockClientWithBody('[]'));
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('JSON object');
+
+        $api->deleteBill('123 456 789');
+    }
+
+    public function testHttp2xxBusinessErrorStaysInDecodedApiResponse()
+    {
+        $api = new WeBirrClient(
+            'merchant-from-client',
+            'x',
+            true,
+            $this->mockClientWithBody('{"error":"bad input","errorCode":"ERROR_INVALID_INPUT","res":null}')
+        );
+
+        $res = $api->deleteBill('123 456 789');
+
+        $this->assertSame('bad input', $res->error);
+        $this->assertSame('ERROR_INVALID_INPUT', $res->errorCode);
     }
 
     public function testBillSerializesCustomerPhone()
@@ -343,6 +405,15 @@ class WeBirrTest extends TestCase
         return new Client([
             'handler' => $handlerStack,
             'base_uri' => $baseUri
+        ]);
+    }
+
+    private function mockClientWithBody(string $body): Client
+    {
+        return new Client([
+            'handler' => HandlerStack::create(new MockHandler([
+                new Response(200, [], $body)
+            ]))
         ]);
     }
 

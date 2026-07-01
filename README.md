@@ -23,6 +23,34 @@ export WEBIRR_TEST_ENV_API_KEY="YOUR_TEST_API_KEY"
 
 Create the client with merchant ID, API key, and environment once. The client automatically sets `Bill::$merchantID` before sending bill create/update requests, so application code and examples should not set `merchantID` on the bill object.
 
+## Error handling & retries
+
+WeBirr business errors come back on an HTTP **2xx** response in `ApiResponse->error` / `ApiResponse->errorCode`, for example invalid API key or duplicate bill reference. Everything else is a platform error surfaced through PHP/Guzzle exceptions, not through `ApiResponse`: network/DNS/TLS failures, timeouts such as `GuzzleHttp\Exception\ConnectException`, **non-2xx** HTTP via Guzzle request exceptions, and empty, non-JSON, or non-object 2xx bodies via `RuntimeException`.
+
+Retry only transient platform errors with exponential backoff + jitter: connection errors, timeouts, and HTTP **5xx / 429 / 408**. Never retry other **4xx** responses. Create and read operations are safe to retry. `deleteBill` is also safe to retry, but a retry after it already succeeded returns an "invalid payment code" business error; treat that as already deleted.
+
+```php
+use GuzzleHttp\Exception\RequestException;
+
+try {
+    $response = $api->createBill($bill);
+
+    if ($response->error) {
+        // WeBirr business error from a 2xx ApiResponse envelope.
+        echo "WeBirr error {$response->errorCode}: {$response->error}";
+    } else {
+        echo "Payment Code = {$response->res}";
+    }
+} catch (RequestException $e) {
+    $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+    // Platform error. Retry only connection/timeouts, status 408/429, or 5xx.
+    throw $e;
+} catch (RuntimeException $e) {
+    // Empty, non-JSON, or non-object 2xx body: platform error.
+    throw $e;
+}
+```
+
 ## Example
 
 ### Creating a new Bill / Updating an existing Bill on WeBirr Servers

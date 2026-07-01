@@ -4,6 +4,7 @@ namespace WeBirr;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
+use RuntimeException;
 
 /*
 class ApiResponse 
@@ -97,10 +98,31 @@ class WeBirrClient
 
   private function decodeResponse($response)
   {
-    if ($response->getStatusCode() == 200)
-      return json_decode($response->getBody());
-    else
-      return ['error' => 'http error ' . $response->getStatusCode() . $response->getReasonPhrase()];
+    $statusCode = $response->getStatusCode();
+    if ($statusCode < 200 || $statusCode >= 300) {
+      throw new RuntimeException(trim('HTTP error ' . $statusCode . ' ' . $response->getReasonPhrase()));
+    }
+
+    $body = (string)$response->getBody();
+    if (trim($body) === '') {
+      throw new RuntimeException('Empty JSON response');
+    }
+
+    $payload = json_decode($body);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+      throw new RuntimeException('Invalid JSON response: ' . json_last_error_msg());
+    }
+
+    if (!is_object($payload)) {
+      throw new RuntimeException('WeBirr API response must be a JSON object');
+    }
+
+    return $payload;
+  }
+
+  private function requestOptions(array $options = []): array
+  {
+    return array_merge($options, ['http_errors' => true]);
   }
 
   /** 
@@ -113,7 +135,7 @@ class WeBirrClient
   public function createBill(Bill $bill)
   {
     $bill = $this->prepareBill($bill);
-    $response = $this->client->request('POST', $this->url('einvoice/api/bill'), ['json' => $bill->toArray()]);
+    $response = $this->client->request('POST', $this->url('einvoice/api/bill'), $this->requestOptions(['json' => $bill->toArray()]));
 
     return $this->decodeResponse($response);
   }
@@ -128,7 +150,7 @@ class WeBirrClient
   public function updateBill(Bill $bill)
   {
     $bill = $this->prepareBill($bill);
-    $response = $this->client->request('PUT', $this->url('einvoice/api/bill'), ['json' => $bill->toArray()]);
+    $response = $this->client->request('PUT', $this->url('einvoice/api/bill'), $this->requestOptions(['json' => $bill->toArray()]));
 
     return $this->decodeResponse($response);
   }
@@ -145,7 +167,7 @@ class WeBirrClient
     $response = $this->client->request(
       'DELETE',
       $this->url('einvoice/api/bill', ['wbc_code' => $paymentCode]),
-      ['json' => []]
+      $this->requestOptions(['json' => []])
     );
 
     return $this->decodeResponse($response);
@@ -162,7 +184,7 @@ class WeBirrClient
    */
   public function getPaymentStatus(string $paymentCode)
   {
-    $response = $this->client->request('GET', $this->url('einvoice/api/paymentStatus', ['wbc_code' => $paymentCode]));
+    $response = $this->client->request('GET', $this->url('einvoice/api/paymentStatus', ['wbc_code' => $paymentCode]), $this->requestOptions());
 
     return $this->decodeResponse($response);
   }
@@ -174,7 +196,7 @@ class WeBirrClient
    */
   public function getBillByReference(string $billReference)
   {
-    $response = $this->client->request('GET', $this->url('einvoice/api/bill', ['bill_reference' => $billReference]));
+    $response = $this->client->request('GET', $this->url('einvoice/api/bill', ['bill_reference' => $billReference]), $this->requestOptions());
 
     return $this->decodeResponse($response);
   }
@@ -186,7 +208,7 @@ class WeBirrClient
    */
   public function getBillByPaymentCode(string $paymentCode)
   {
-    $response = $this->client->request('GET', $this->url('einvoice/api/bill', ['wbc_code' => $paymentCode]));
+    $response = $this->client->request('GET', $this->url('einvoice/api/bill', ['wbc_code' => $paymentCode]), $this->requestOptions());
 
     return $this->decodeResponse($response);
   }
@@ -207,7 +229,7 @@ class WeBirrClient
    */
   public function getPayments(string $lastTimeStamp,int $limit)
   {
-    $response = $this->client->request('GET', $this->url('einvoice/api/payments', ['last_timestamp' => $lastTimeStamp, 'limit' => $limit]));
+    $response = $this->client->request('GET', $this->url('einvoice/api/payments', ['last_timestamp' => $lastTimeStamp, 'limit' => $limit]), $this->requestOptions());
 
     return $this->decodeResponse($response);
   }
@@ -225,7 +247,7 @@ class WeBirrClient
       'payment_status' => $paymentStatus,
       'last_timestamp' => $lastTimeStamp,
       'limit' => $limit
-    ]));
+    ]), $this->requestOptions());
 
     return $this->decodeResponse($response);
   }
@@ -236,7 +258,7 @@ class WeBirrClient
    */
   public function getSupportedBanks()
   {
-    $response = $this->client->request('GET', $this->url('einvoice/api/banks'));
+    $response = $this->client->request('GET', $this->url('einvoice/api/banks'), $this->requestOptions());
 
     return $this->decodeResponse($response);
   }
@@ -251,7 +273,7 @@ class WeBirrClient
    */
   public function getStat(string $dateFrom, string $dateTo)
   {
-    $response = $this->client->request('GET', $this->url('merchant/stat', ['date_from' => $dateFrom, 'date_to' => $dateTo]));
+    $response = $this->client->request('GET', $this->url('merchant/stat', ['date_from' => $dateFrom, 'date_to' => $dateTo]), $this->requestOptions());
 
     return $this->decodeResponse($response);
   }
